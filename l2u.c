@@ -82,5 +82,7 @@ int main(int argc, char *argv[ ]) {
     else
       i++;
   }
-  close(in); close(out); close(outtty);
+  close(in); 
+  close(out); 
+  close(outtty);
 }

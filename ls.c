@@ -1,138 +1,158 @@
 #include "ucode.c"
 
-#define BLKSIZE 1024
+#define BLK 1024
+#define OWNER 000700
+#define GROUP 000070
+#define OTHER 000007
 
-enum TRUTH_VALUES
+STAT utat, *sp;
+int fd, n;
+DIR *dp;
+char f[32], cwdname[64], file[64];
+char buf[1024];
+
+DIR *dp;
+char *cp;
+
+void pdate(t) u8 t[4];
 {
-    FALSE,
-    TRUE
-};
+    printf("%c%c%c%c-%c%c-%c%c  ",
+           (t[0] >> 4) + '0', (t[0] & 0x0F) + '0',
+           (t[1] >> 4) + '0', (t[1] & 0x0F) + '0',
+           (t[2] >> 4) + '0', (t[2] & 0x0F) + '0',
+           (t[3] >> 4) + '0', (t[3] & 0x0F) + '0');
+}
 
-#define S_ISDIR(m) ((m & 0170000) == 0040000) /* directory */
-#define S_ISLNK(m) ((m & 0170000) == 0120000) /* symbolic link */
-#define S_ISREG(m) ((m & 0170000) == 0100000) /* regular file */
-
-/*
-    Name: ls_file
-    Description: grabs a files state pointer and checks byte permissions and displays content to user.
-*/
-void ls_file(STAT *stat_ptr, char *name, char *path)
+void ptime(t) u8 t[4];
 {
-    char full_path[32], link_name[60];
-    char *t1 = "xwrxwrxwr-------";
-    char *t2 = "----------------"; 
+    printf("%c%c:%c%c:%c%c  ",
+           (t[0] >> 4) + '0', (t[0] & 0x0F) + '0',
+           (t[1] >> 4) + '0', (t[1] & 0x0F) + '0',
+           (t[2] >> 4) + '0', (t[2] & 0x0F) + '0');
+}
 
-    //check the mode
-    if (S_ISDIR(stat_ptr->st_mode)) //print file type as d
-        printf("%c", 'd');
-    if (S_ISLNK(stat_ptr->st_mode)) //print file type as s
-        printf("%c", 's');
-    if (S_ISREG(stat_ptr->st_mode)) //print file type as -
-        printf("%c", '-');
+void ls_file(STAT *sp, char *name, char *path)
+{
+    u16 mode;
+    int mask, k, len;
+    char fullname[32], linkname[60];
 
-    for (int i = 8; i >= 0; i--) // check the permissions 
+    mode = sp->st_mode;
+    if ((mode & 0xF000) == 0x4000)
+        mputc('d');
+
+    if ((mode & 0xF000) == 0xA000)
+        mputc('s');
+    else if ((mode & 0xF000) == 0x8000)
+        mputc('-');
+
+    mask = 000400;
+    for (k = 0; k < 3; k++)
     {
-        if (stat_ptr->st_mode & (1 << i))
-            printf("%c", t1[i]); // display valid permissions
+        if (mode & mask)
+            mputc('r');
         else
-            printf("%c", t2[i]); // dash invalid permissions
+            mputc('-');
+        mask = mask >> 1;
+        if (mode & mask)
+            mputc('w');
+        else
+            mputc('-');
+        mask = mask >> 1;
+        if (mode & mask)
+            mputc('x');
+        else
+            mputc('-');
+        mask = mask >> 1;
     }
 
-    // print file details
-    // link count, uid, gid, filesize, name
-    printf(" %d  %d  %d  %d  %s", stat_ptr->st_nlink, stat_ptr->st_uid, stat_ptr->st_gid, stat_ptr->st_size, name);
+    if (sp->st_nlink < 10)
+        printf("  %d ", sp->st_nlink);
+    else
+        printf(" %d ", sp->st_nlink);
 
-    if (S_ISLNK(stat_ptr->st_mode)) // symlink file need to print linked file
+    printf(" %d  %d", sp->st_uid, sp->st_gid);
+    printf("%d ", sp->st_size);
+
+
+    printf("%s", name);
+
+    if ((mode & 0xF000) == 0xA000)
     {
-        strcpy(full_path, path);
-        strcat(full_path, "/");
-        strcat(full_path, name);
-        readlink(full_path, link_name);
-        printf(" -> %s", link_name); // linked path name
+        strcpy(fullname, path);
+        strcat(fullname, "/");
+        strcat(fullname, name);
+        len = readlink(fullname, linkname);
+        printf(" -> %s", linkname);
     }
+
     printf("\n\r");
 }
 
-/*
-    Name: ls_dir
-    Description: using a directorys stat pointer read the bytes of the directory file and ls all files in the directory
-*/
-void ls_dir(char *name, char *path)
+void ls_dir(STAT *sp, char *path)
 {
-    char ls_path[32];
-    char buf[1024];
-    DIR *dir_ptr;
-    char *char_ptr;
-    int dir_fd, can_read;
-    STAT dstat, *dirstat_ptr;
-    
-    char temp[255];
+    STAT dstat, *dsp;
+    long size;
+    char temp[32];
+    int r;
 
-
-    dir_fd = open(name, O_RDONLY); //open dir file for read
-
-
-    while ((can_read = read(dir_fd, buf, BLKSIZE))) // read from the directory until there is nothing left
+    size = sp->st_size;
+    fd = open(file, O_RDONLY); /* open dir file for READ */
+    while ((n = read(fd, buf, 1024)))
     {
-        char_ptr = buf; 
-        dir_ptr = (DIR *)buf; // directory pointer on the entries in the directory
-        while (char_ptr < buf + BLKSIZE) // go through each entry of the directory file
+        cp = buf;
+        dp = (DIR *)buf;
+
+        while (cp < buf + 1024)
         {
-            // going to print the contents of the directory that we are looking at
-            dirstat_ptr = &dstat; 
-            strncpy(temp, dir_ptr->name, dir_ptr->name_len); //copy name
-            temp[dir_ptr->name_len] = 0;
-            ls_path[0] = 0; // reset ls_path
+            dsp = &dstat;
+            strncpy(temp, dp->name, dp->name_len);
+            temp[dp->name_len] = 0;
+            f[0] = 0;
+            strcpy(f, file);
+            strcat(f, "/");
+            strcat(f, temp);
+            if (stat(f, dsp) >= 0)
+                ls_file(dsp, temp, path);
 
-            // Build path to ls
-            strcpy(ls_path, name);
-            strcat(ls_path, "/");
-            strcat(ls_path, temp);
-
-            if (stat(ls_path, dirstat_ptr) >= 0) // check item is a real file and return stat 
-                ls_file(dirstat_ptr, temp, path); 
-
-            char_ptr += dir_ptr->rec_len; // Grab next file to ls (everything is a file in linux!)
-            dir_ptr = (DIR *)char_ptr; 
+            cp += dp->rec_len;
+            dp = (DIR *)cp;
         }
     }
-    close(dir_fd);
+    close(fd);
 }
 
 int main(int argc, char *argv[])
 {
-    STAT filestat, *stat_ptr = &filestat;
-    int stat_success;
-    char *path;
-    char file_name[BLKSIZE];
+    int r, i;
+    sp = &utat;
 
-    switch (argc)
-    {
-        case 1: // ls CWD
-            path = "./";
-            break;
-
-        case 2:
-            path = argv[1]; // ls on a file
-            break;
-
-        default: // Validate arguments
-            exit(0);
+    if (argc == 1)
+    { 
+        strcpy(file, "./");
     }
-    
-    if (stat_success = stat(path, stat_ptr) < 0) // grab file stat 
+    else
+    {
+        strcpy(file, argv[1]);
+    }
+
+    if (stat(file, sp) < 0)
     {
         printf("cannot stat %s\n", argv[1]);
         exit(2);
     }
-    strcpy(file_name, path); // grab the name of the argument
-    if (S_ISDIR(stat_ptr->st_mode))
+
+    if ((sp->st_mode & 0xF000) == 0x8000)
     {
-        ls_dir(file_name, file_name); 
+        ls_file(sp, file, file);
     }
     else
     {
-        ls_file(stat_ptr, file_name, file_name);
+        if ((sp->st_mode & 0xF000) == 0x4000)
+        {
+            ls_dir(sp, file);
+        }
     }
-    exit(0); // Leave success
+
+    exit(0);
 }

@@ -46,7 +46,6 @@ int main(int argc, char *argv[])
 					write(2, &CR, 1);
 			}
 		}
-
 		else
 		{ // fd=0 case
 			cp = buf;

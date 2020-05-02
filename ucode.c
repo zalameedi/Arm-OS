@@ -21,7 +21,6 @@ typedef unsigned int   u32;
 
 #include "uio.c"
 #include "crt0.c"
-//#include "string.h"
 
 int pid;
 char line[64], pathname[32], i2[32], i3[32];
@@ -453,13 +452,19 @@ int pwd()
 
 int eatpath(char *line, char *name[ ])  
 {
-  int i, n; char *cp;
+  int i;
+  int n; 
+  char *cp;
 
   n = 0; 
+
+  //set default name to 0
   for (i=0; i<16; i++)
       name[i]=0;
 
-  cp = line;
+  cp = line; // get a pointer to line string
+
+  
   while (*cp != 0){
        while (*cp == ' ')
               *cp++ = 0;       

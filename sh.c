@@ -1,58 +1,77 @@
 #include "ucode.c"
 #define BLK 1024
 
-char *name[16], components[64];
+char *name[16];
+char components[64];
 int nk;
 int nowait;
-
 char buf[1024];
 int color = 0x00C;
 
 
 int main(int argc, char *argv[])
 {
-  int pid, status, i;
-  char buf[256], tbuf[256], *cp, *cq;
+  int pid;
+  int status;
+  int i;
+  char buf[256];
+  char tbuf[256];
+  char *cp;
+  char *cq;
+  signal(2, 1); //signal handler
+  color = getpid() + 0x000A; //grab color id with 10 offsetted
 
-  signal(2, 1); 
-
-  color = getpid() + 0x000A;
-
+  /*** (1) infinite loop to maintain shell functionality ***/
   while (1)
   {
-    printf("sh %d# ", getpid());
 
-    gets(buf);
-    if (buf[0] == 0)
+    /*** (2). parse command ***/
+    printf("sh %d# ", getpid()); // get process id
+    gets(buf); // get command from user
+    if (buf[0] == 0) //if it's empty move on.
       continue;
+    
+    //Entire parsing process of command can begin.
+    cp = buf; //set pointer to our str
 
-
-    cp = buf;
-    while (*cp == ' ') 
+    while (*cp == ' ') //get next portion if the command has an argument
+    {
       cp++;
+    }
 
-    cq = cp;
+    cq = cp; //cq = cp == buf
+
     while (*cq) 
-      cq++;
-    cq--;
-    while (*cq == ' ')
+    {
+      cq++; // get to the end of cq
+    }
+
+    cq--; //decrement cq (helps in identifying portions of command recursively)
+
+
+    while (*cq == ' ') //set space in command contents to 0 (identifying them later easier)
     {
       *cq = 0;
-      cq--;
+      cq--; //get to first command right before ' '
     }
 
 
-    if (strcmp(cp, "") == 0) 
+    if (strcmp(cp, "") == 0) //empty command just pass it on
       continue;            
 
-    strcpy(tbuf, cp);
+    strcpy(tbuf, cp); 
     strcpy(buf, tbuf);
+    strcpy(tbuf, buf); //create a temporary string to be able to get path if there is one in command.
 
-    strcpy(tbuf, buf);
+    nk = eatpath(tbuf, name); //gp pathname and command into name array
 
-    nk = eatpath(tbuf, name);
 
-    if (strcmp(name[0], "cd") == 0)
+    /** (3) COMMAND PORTION HANDLED HERE **/
+
+
+
+    // name[0] == command name[1] == path
+    if (strcmp(name[0], "cd") == 0) //CD command here
     {
       if (name[1] == 0)
         chdir("/");
@@ -99,10 +118,9 @@ int main(int argc, char *argv[])
       continue;
     }
 
+    // (4) alright parent sh got a command
     printf("parent sh %d: fork a child\n", getpid());
-
-    pid = fork(); 
-
+    pid = fork(); //fork a child
     if (pid)
     { 
 
@@ -124,26 +142,19 @@ int scan(buf, tail) char *buf;
 char **tail;
 {
   char *p;
-
   p = buf;
   *tail = 0;
-
   while (*p) 
     p++;
-
   while (p != buf && *p != '|') 
     p--;
-
   if (p == buf) 
     return 0;
-
   *p = 0;           
   p++;              
   while (*p == ' ') 
     p++;
-
   *tail = p; 
-
   return 1; 
 }
 
@@ -161,7 +172,6 @@ int do_pipe(char *buf, int *rpd)
     close(rpd[1]);
   }
 
-
   hasPipe = scan(buf, &tail);
 
   if (hasPipe)
@@ -178,7 +188,6 @@ int do_pipe(char *buf, int *rpd)
       printf("proc %d fork failed\n", getpid());
       exit(1);
     }
-
     if (pid)
     { 
       close(lpd[1]);

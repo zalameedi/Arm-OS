@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 
 			linenum++;
 			if (searching && checkline(line, argv[1], patternsize))
-				printf("Found match at line %d (%s)\n", linenum / 2 + 1, line);
+				printf("%d %s\n", linenum / 2 + 1, line);
 		}
 	}
 	else

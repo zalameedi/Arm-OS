@@ -3,7 +3,7 @@
 #define TERMINAL_ROWS 25
 #define ENTER '\r'
 #define NEWLINE '\n'
-#define SPACE ' ' // May the force be with you
+#define SPACE ' ' 
 
 enum TRUTH_VALUES
 {
@@ -18,13 +18,10 @@ int more_terminal(int in_port);
 
 main(int argc, char *argv[])
 {
-    printf("********** Noah's more **********\n\r");
-
+    printf("More being executed....\n");
     int infile, in_port;
-
     validate_serport(&in_port);
     validate_infile(&infile);
-
     if (infile) // if more on file
     {
         more_file(infile, in_port);
