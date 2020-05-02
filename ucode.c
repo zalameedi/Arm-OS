@@ -27,6 +27,10 @@ char line[64], pathname[32], i2[32], i3[32];
 char *name[16], components[64];
 int nk;
 #define EOF -1
+#define BLK 1024
+#define OWNER 000700
+#define GROUP 000070
+#define OTHER 000007
 extern char cr;
 
 void putchar(const char c){ }

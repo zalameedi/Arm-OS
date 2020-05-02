@@ -1,3 +1,19 @@
+/*****************************************
+ * Zeid Al-Ameedi
+ * CPTS 460 Final project.
+ * Information (Implementation) - 
+ * can be found on https://www.eecs.wsu.edu/~cs460/last.html
+ * 
+ * Collab : Dr. KC Wang
+ * Resources : stackoverflow &  
+ * Book1: Design and Implementation of the MTX Operating System
+ * Book2: Embedded Real Time Operating Systems
+ * Book3: Systems Programming in Unix:Linux
+ * 
+ * All my code, commits, projects and labs for the course can be found at
+ * www.github.com/zalameedi
+*****************************************/
+
 #include "ucode.c"
 #define BLK 1024
 
@@ -7,136 +23,6 @@ int nk;
 int nowait;
 char buf[1024];
 int color = 0x00C;
-
-
-int main(int argc, char *argv[])
-{
-  int pid;
-  int status;
-  int i;
-  char buf[256];
-  char tbuf[256];
-  char *cp;
-  char *cq;
-  signal(2, 1); //signal handler
-  color = getpid() + 0x000A; //grab color id with 10 offsetted
-
-  /*** (1) infinite loop to maintain shell functionality ***/
-  while (1)
-  {
-
-    /*** (2). parse command ***/
-    printf("sh %d# ", getpid()); // get process id
-    gets(buf); // get command from user
-    if (buf[0] == 0) //if it's empty move on.
-      continue;
-    
-    //Entire parsing process of command can begin.
-    cp = buf; //set pointer to our str
-
-    while (*cp == ' ') //get next portion if the command has an argument
-    {
-      cp++;
-    }
-
-    cq = cp; //cq = cp == buf
-
-    while (*cq) 
-    {
-      cq++; // get to the end of cq
-    }
-
-    cq--; //decrement cq (helps in identifying portions of command recursively)
-
-
-    while (*cq == ' ') //set space in command contents to 0 (identifying them later easier)
-    {
-      *cq = 0;
-      cq--; //get to first command right before ' '
-    }
-
-
-    if (strcmp(cp, "") == 0) //empty command just pass it on
-      continue;            
-
-    strcpy(tbuf, cp); 
-    strcpy(buf, tbuf);
-    strcpy(tbuf, buf); //create a temporary string to be able to get path if there is one in command.
-
-    nk = eatpath(tbuf, name); //gp pathname and command into name array
-
-
-    /** (3) COMMAND PORTION HANDLED HERE **/
-
-
-
-    // name[0] == command name[1] == path
-    if (strcmp(name[0], "cd") == 0) //CD command here
-    {
-      if (name[1] == 0)
-        chdir("/");
-      else
-        chdir(name[1]);
-      continue;
-    }
-
-    if (strcmp(name[0], "pwd") == 0)
-    {
-      pwd();
-      continue;
-    }
-
-    if (strcmp(name[0], "echo") == 0)
-    {
-      for (i = 1; i < nk; i++)
-      {
-        printf("%s ", name[i]);
-      }
-      continue;
-    }
-
-    if (strcmp(name[0], "?") == 0 || strcmp(name[0], "help") == 0)
-    {
-      continue;
-    }
-
-    if (strcmp(name[0], "chname") == 0)
-    {
-      chname(name[1]);
-      continue;
-    }
-
-    if (strcmp(name[0], "logout") == 0)
-    {
-      chdir("/");
-      exit(0);
-    }
-
-    if (strcmp(name[0], "exit") == 0)
-    {
-      exit(0);
-      continue;
-    }
-
-    // (4) alright parent sh got a command
-    printf("parent sh %d: fork a child\n", getpid());
-    pid = fork(); //fork a child
-    if (pid)
-    { 
-
-      printf("parent sh %d: wait for child %d to die\n", getpid(), pid);
-      pid = wait(&status);
-      printf("sh %d: child %d exit status = %x\n", getpid(), pid, status);
-      continue;
-    }
-    else
-    {
-      printf("child sh %d running : cmd=%s\n", getpid(), buf);
-      do_pipe(buf, 0);
-    }
-  }
-}
-
 
 int scan(buf, tail) char *buf;
 char **tail;
@@ -158,6 +44,118 @@ char **tail;
   return 1; 
 }
 
+
+int main(int argc, char *argv[])
+{
+  int pid;
+  int status;
+  int i;
+  char buf[256];
+  char tbuf[256];
+  char *cp;
+  char *cq;
+  signal(2, 1); //signal handler
+  color = getpid() + 0x000A; //grab color id with 10 offsetted
+
+  /*** (1) infinite loop to maintain shell functionality ***/
+  while (1)
+  {
+    /*** (2). parse command ***/
+    printf("sh %d# ", getpid()); // get process id
+    gets(buf); // get command from user
+    if (buf[0] == 0) //if it's empty move on.
+      continue;
+    //Entire parsing process of command can begin.
+    cp = buf; //set pointer to our str
+    while (*cp == ' ') //get next portion if the command has an argument
+    {
+      cp++;
+    }
+    cq = cp; //cq = cp == buf
+    while (*cq) 
+    {
+      cq++; // get to the end of cq
+    }
+    cq--; //decrement cq (helps in identifying portions of command recursively)
+    while (*cq == ' ') //set space in command contents to 0 (identifying them later easier)
+    {
+      *cq = 0;
+      cq--; //get to first command right before ' '
+    }
+    if (strcmp(cp, "") == 0) //empty command just pass it on
+      continue;            
+    strcpy(tbuf, cp); 
+    strcpy(buf, tbuf);
+    strcpy(tbuf, buf); //create a temporary string to be able to get path if there is one in command.
+    nk = eatpath(tbuf, name); //gp pathname and command into name array
+    /** (3) COMMAND PORTION HANDLED HERE **/
+    // name[0] == command name[1] == path
+    if (strcmp(name[0], "cd") == 0) //CD command here
+    {
+      if (name[1] == 0)
+        chdir("/");
+      else
+        chdir(name[1]);
+      continue;
+    }
+
+
+
+
+
+    // COMMAND 2
+    if (strcmp(name[0], "pwd") == 0)
+    {
+      pwd();
+      continue;
+    }
+    //COMMAND 3
+    if (strcmp(name[0], "echo") == 0)
+    {
+      for (i = 1; i < nk; i++)
+      {
+        printf("%s ", name[i]);
+      }
+      continue;
+    }
+    //COMMAND 4
+    if (strcmp(name[0], "chname") == 0)
+    {
+      chname(name[1]);
+      continue;
+    }
+    // COMMAND 5
+    if (strcmp(name[0], "logout") == 0)
+    {
+      chdir("/");
+      exit(0);
+    }
+    // COMMAND 6
+    if (strcmp(name[0], "exit") == 0)
+    {
+      exit(0);
+      continue;
+    }
+    // (4) alright parent sh got a command
+    printf("parent sh %d: fork a child\n", getpid());
+    pid = fork(); //fork a child
+    if (pid)
+    { 
+
+      printf("parent sh %d: wait for child %d to die\n", getpid(), pid);
+      pid = wait(&status);
+      printf("sh %d: child %d exit status = %x\n", getpid(), pid, status);
+      continue;
+    }
+    else
+    {
+      printf("child sh %d running : cmd=%s\n", getpid(), buf);
+      do_pipe(buf, 0);
+    }
+  }
+}
+
+
 int do_pipe(char *buf, int *rpd)
 {
   int hasPipe, pid;
@@ -171,9 +169,7 @@ int do_pipe(char *buf, int *rpd)
     dup(rpd[1]);
     close(rpd[1]);
   }
-
   hasPipe = scan(buf, &tail);
-
   if (hasPipe)
   { 
     if (pipe(lpd) < 0)
@@ -211,15 +207,17 @@ int do_pipe(char *buf, int *rpd)
 
 int command(char *s)
 {
-  char *name[16], tbuf[64];
-  int i, j, nk, I;
+  char *name[16];
+  char tbuf[64];
+  int i;
+  int j;
+  int nk;
+  int I;
   char cmdline[64];
 
   strcpy(tbuf, s);
   nk = eatpath(tbuf, name);
-
   I = nk;
-
   for (i = 0; i < nk; i++)
   {
     if (strcmp(name[i], "<") == 0)
@@ -276,9 +274,7 @@ int command(char *s)
       break;
     }
   }
-
   strcpy(cmdline, name[0]);
-
   for (j = 1; j < I; j++)
   {
     strcat(cmdline, " ");

@@ -1,3 +1,19 @@
+/*****************************************
+ * Zeid Al-Ameedi
+ * CPTS 460 Final project.
+ * Information (Implementation) - 
+ * can be found on https://www.eecs.wsu.edu/~cs460/last.html
+ * 
+ * Collab : Dr. KC Wang
+ * Resources : stackoverflow &  
+ * Book1: Design and Implementation of the MTX Operating System
+ * Book2: Embedded Real Time Operating Systems
+ * Book3: Systems Programming in Unix:Linux
+ * 
+ * All my code, commits, projects and labs for the course can be found at
+ * www.github.com/zalameedi
+*****************************************/
+
 #include "ucode.c"
 
 
@@ -16,18 +32,15 @@ int main(int argc, char *argv[ ])
     //1. Close fd so we can set them later. 
     close(0);
     close(1);
-
     //2. Set the STDIN, STDOUT, STDERR
     in = open(argv[1], 0);
     out = open(argv[1], 1);
     err = open(argv[1], 2);
     fixtty(argv[1]);
-
     // 3. Authenticate by checking against our etc/passwd file
     fd = open("/etc/passwd", O_RDONLY);
     count = read(fd, buf1, 1024);
     strcpy(hold, buf1);
-
     // 4. Prompt user for login 
     while(1)
     {
@@ -43,11 +56,8 @@ int main(int argc, char *argv[ ])
             r = 0;
             un = 0;
             p = 0;
-
             //username:password:gid:uid:fullname:HOMEDIR:program
             //e.g.    root:xxxxxxx:1000:0:superuser:/root:sh
-
-
             while(hold[i] != '\n' && hold[i])
             {
                 token[r] = hold[i];
@@ -109,28 +119,21 @@ int main(int argc, char *argv[ ])
                 }
                 p++;
                 un = 0;
-
                 while(token[p])
                 {
                     cmd[un] = token[p];
                     un++;
                     p++;
                 }
-
                 //6. Change user ID to working proc's ID
                 //7. Change to user home directory
-                
                 chuid(U,G);
                 chdir(dir);
                 close(fd);
-
-
                 //8. launch SH using wanix sys call
                 exec("sh");
                 return 1;
-
             }
-
             //set info in memory
             memset(uname, 0, 64);
             memset(pass, 0, 64);

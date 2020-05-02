@@ -1,3 +1,19 @@
+/*****************************************
+ * Zeid Al-Ameedi
+ * CPTS 460 Final project.
+ * Information (Implementation) - 
+ * can be found on https://www.eecs.wsu.edu/~cs460/last.html
+ * 
+ * Collab : Dr. KC Wang
+ * Resources : stackoverflow &  
+ * Book1: Design and Implementation of the MTX Operating System
+ * Book2: Embedded Real Time Operating Systems
+ * Book3: Systems Programming in Unix:Linux
+ * 
+ * All my code, commits, projects and labs for the course can be found at
+ * www.github.com/zalameedi
+*****************************************/
+
 #include "ucode.c"
 
 char buf[1024];
@@ -15,7 +31,7 @@ int convert(char c) {
       return upper[i];
     i++;
   }
-  return -1;  // not found
+  return -1;  
 }
 
 
@@ -25,13 +41,11 @@ int main(int argc, char *argv[ ]) {
   int i, j;
   gettty(tty);
   int outtty = open(tty, O_WRONLY);
-  // STDIN
   if (argc == 1)
   {
     in = 0;
     out = 1;
   }
-  // FILE
   else
   {
     in = open(argv[1], O_RDONLY);
@@ -39,26 +53,20 @@ int main(int argc, char *argv[ ]) {
   }
   i = j = 0;
   char last;
-  // main loop
   while(1)
   {
-    n = read(in, buf, 1);      // read from input
+    n = read(in, buf, 1);      
     if (n < 1)
-     break;        // if no data, break
-
+     break;        
     string[i] = buf[0];
-
     int c = convert(buf[0]);
     if (c != -1)
     {
       string[i] = c;
       buf[0] = c;
     }
-
-
     if (!in)
       write(outtty, buf, 1);
-
     if (string[i] == 10) // 10 == '\n';
     {
       string[++i] = '\r';        // 13 == '\r';
@@ -67,8 +75,6 @@ int main(int argc, char *argv[ ]) {
       memset(string, 0, 128);
       i = 0;
     }
-
-    // STDIN user presses "enter"
     else if (string[i] == 13 && !in)
     {
       string[i++] = 10;
@@ -78,7 +84,6 @@ int main(int argc, char *argv[ ]) {
       memset(string, 0, 128);
       i = 0;
     }
-
     else
       i++;
   }

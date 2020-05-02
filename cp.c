@@ -1,3 +1,19 @@
+/*****************************************
+ * Zeid Al-Ameedi
+ * CPTS 460 Final project.
+ * Information (Implementation) - 
+ * can be found on https://www.eecs.wsu.edu/~cs460/last.html
+ * 
+ * Collab : Dr. KC Wang
+ * Resources : stackoverflow &  
+ * Book1: Design and Implementation of the MTX Operating System
+ * Book2: Embedded Real Time Operating Systems
+ * Book3: Systems Programming in Unix:Linux
+ * 
+ * All my code, commits, projects and labs for the course can be found at
+ * www.github.com/zalameedi
+*****************************************/
+
 #include "ucode.c"
 
 int main(int argc, char *argv[]) {
